@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="description"
+        content="QUORUM multi-builder software build integrity verification console"
+    >
+
+    <title>QUORUM · Build Integrity</title>
+
+    <link
+        rel="stylesheet"
+        href="/style.css"
+    >
+
+    <script
+        defer
+        src="/script.js"
+    ></script>
+
+</head>
+
+
+<body>
+
+<div class="app-shell">
+
+
+    <!-- ================================================== -->
+    <!-- SIDEBAR -->
+    <!-- ================================================== -->
+
+    <aside class="sidebar">
+
+        <div class="brand">
+
+            <div class="brand-mark">
+                Q
+            </div>
+
+            <div>
+
+                <div class="brand-name">
+                    QUORUM
+                </div>
+
+                <div class="brand-subtitle">
+                    BUILD INTEGRITY
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <nav class="nav">
+
+            <button
+                class="nav-item active"
+                data-tab="overview"
+                type="button"
+            >
+                <span>▦</span>
+                Overview
+            </button>
+
+
+            <button
+                class="nav-item"
+                data-tab="builders"
+                type="button"
+            >
+                <span>⬡</span>
+                Builder network
+            </button>
+
+
+            <button
+                class="nav-item"
+                data-tab="audit"
+                type="button"
+            >
+                <span>◷</span>
+                Audit trail
+            </button>
+
+        </nav>
+
+
+        <div class="sidebar-footer">
+
+            <div class="security-pill">
+
+                <span class="pulse"></span>
+
+                LOCAL VERIFICATION NODE
+
+            </div>
+
+
+            <div class="footer-text">
+
+                SHA-256 · Ed25519 · 2-of-3 QUORUM
+
+            </div>
+
+        </div>
+
+    </aside>
+
+
+    <!-- ================================================== -->
+    <!-- MAIN -->
+    <!-- ================================================== -->
+
+    <main class="main">
+
+
+        <!-- HEADER -->
+
+        <header class="topbar">
+
+            <div>
+
+                <div class="eyebrow">
+                    TRUST, VERIFIED.
+                </div>
+
+                <h1>
+                    Build integrity console
+                </h1>
+
+                <p class="subtitle">
+
+                    Independent artifact verification,
+                    cryptographic attestations,
+                    and quorum consensus.
+
+                </p>
+
+            </div>
+
+
+            <div class="topbar-actions">
+
+                <div
+                    id="connectionBadge"
+                    class="connection-badge offline"
+                >
+
+                    <span class="status-dot"></span>
+
+                    <span id="connectionText">
+                        Connecting...
+                    </span>
+
+                </div>
+
+
+                <button
+                    id="verifyBtn"
+                    class="primary-btn"
+                    type="button"
+                >
+                    ↻ Run verification
+                </button>
+
+            </div>
+
+        </header>
+
+
+        <!-- ================================================== -->
+        <!-- OVERVIEW -->
+        <!-- ================================================== -->
+
+        <section
+            id="tab-overview"
+            class="tab-content active"
+        >
+
+
+            <!-- ================================================== -->
+            <!-- SOURCE INPUT -->
+            <!-- ================================================== -->
+
+            <section class="source-panel">
+
+                <div class="source-panel-header">
+
+                    <div>
+
+                        <div class="panel-kicker">
+                            SOURCE INPUT
+                        </div>
+
+                        <h2>
+                            Submit software source for verification
+                        </h2>
+
+                        <p>
+
+                            Provide the source package or
+                            public repository that QUORUM
+                            should evaluate.
+
+                        </p>
+
+                    </div>
+
+
+                    <div
+                        id="sourceState"
+                        class="source-state"
+                    >
+                        NO SOURCE
+                    </div>
+
+                </div>
+
+
+                <div class="source-input-grid">
+
+
+                    <!-- ZIP -->
+
+                    <div class="source-input-card">
+
+                        <div class="source-card-title">
+                            📦 Upload source package
+                        </div>
+
+
+                        <div class="source-card-description">
+
+                            Upload a ZIP containing your
+                            complete software project.
+
+                        </div>
+
+
+                        <label
+                            class="file-upload"
+                            for="sourceZip"
+                        >
+
+                            <span class="file-upload-icon">
+                                ↑
+                            </span>
+
+                            <span>
+                                Choose Source ZIP
+                            </span>
+
+                        </label>
+
+
+                        <input
+                            id="sourceZip"
+                            type="file"
+                            accept=".zip"
+                            hidden
+                        >
+
+
+                        <div
+                            id="selectedSource"
+                            class="selected-source"
+                        >
+                            No source package selected.
+                        </div>
+
+
+                        <button
+                            id="uploadSourceBtn"
+                            class="primary-btn source-btn"
+                            type="button"
+                        >
+                            LOAD SOURCE
+                        </button>
+
+                    </div>
+
+
+                    <!-- GITHUB -->
+
+                    <div class="source-input-card">
+
+                        <div class="source-card-title">
+                            ◇ Public source repository
+                        </div>
+
+
+                        <div class="source-card-description">
+
+                            Enter a public GitHub repository
+                            containing the source code.
+
+                        </div>
+
+
+                        <input
+                            id="githubUrl"
+                            class="source-url-input"
+                            type="url"
+                            placeholder="https://github.com/user/project"
+                        >
+
+
+                        <button
+                            id="githubSourceBtn"
+                            class="secondary-btn source-btn"
+                            type="button"
+                        >
+                            LOAD REPOSITORY
+                        </button>
+
+
+                        <div class="source-note">
+
+                            QUORUM loads a source snapshot
+                            into the local submission workspace.
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- LOADED SOURCE -->
+
+                <div
+                    id="sourceInfo"
+                    class="source-info hidden"
+                >
+
+                    <div>
+
+                        <span>
+                            SOURCE
+                        </span>
+
+                        <strong id="sourceName">
+                            —
+                        </strong>
+
+                    </div>
+
+
+                    <div>
+
+                        <span>
+                            TYPE
+                        </span>
+
+                        <strong id="sourceType">
+                            —
+                        </strong>
+
+                    </div>
+
+
+                    <div>
+
+                        <span>
+                            FILES
+                        </span>
+
+                        <strong id="sourceFiles">
+                            —
+                        </strong>
+
+                    </div>
+
+
+                    <div>
+
+                        <span>
+                            SOURCE SHA-256
+                        </span>
+
+                        <code id="sourceHash">
+                            —
+                        </code>
+
+                    </div>
+
+                </div>
+
+
+                <!-- FLOW -->
+
+                <div class="source-flow">
+
+                    <div
+                        class="source-flow-step active"
+                    >
+                        <span>01</span>
+                        SOURCE
+                    </div>
+
+                    <div class="source-flow-arrow">
+                        →
+                    </div>
+
+                    <div class="source-flow-step">
+                        <span>02</span>
+                        BUILDER A
+                    </div>
+
+                    <div class="source-flow-arrow">
+                        →
+                    </div>
+
+                    <div class="source-flow-step">
+                        <span>03</span>
+                        BUILDER B
+                    </div>
+
+                    <div class="source-flow-arrow">
+                        →
+                    </div>
+
+                    <div class="source-flow-step">
+                        <span>04</span>
+                        BUILDER C
+                    </div>
+
+                    <div class="source-flow-arrow">
+                        →
+                    </div>
+
+                    <div class="source-flow-step">
+                        <span>05</span>
+                        QUORUM
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- STATUS -->
+
+            <section class="status-strip">
+
+                <div class="status-label">
+                    SYSTEM STATUS
+                </div>
+
+
+                <div
+                    id="systemStatus"
+                    class="system-status"
+                >
+                    Checking backend...
+                </div>
+
+
+                <div
+                    id="systemStatusText"
+                    class="system-status-text"
+                >
+                    Connecting to Flask verification API
+                </div>
+
+            </section>
+
+
+            <!-- KPI -->
+
+            <section class="kpi-grid">
+
+
+                <article class="kpi-card">
+
+                    <div class="kpi-head">
+
+                        <span>
+                            BUILDERS VERIFIED
+                        </span>
+
+                        <span class="kpi-icon">
+                            ⬡
+                        </span>
+
+                    </div>
+
+
+                    <div
+                        id="verifiedCount"
+                        class="kpi-value"
+                    >
+                        —
+                    </div>
+
+
+                    <div
+                        id="verifiedHint"
+                        class="kpi-hint"
+                    >
+                        Waiting for verification
+                    </div>
+
+                </article>
+
+
+                <article class="kpi-card">
+
+                    <div class="kpi-head">
+
+                        <span>
+                            QUORUM STRENGTH
+                        </span>
+
+                        <span class="kpi-icon">
+                            ◎
+                        </span>
+
+                    </div>
+
+
+                    <div
+                        id="quorumStrength"
+                        class="kpi-value"
+                    >
+                        —
+                    </div>
+
+
+                    <div
+                        id="quorumHint"
+                        class="kpi-hint"
+                    >
+                        Required consensus: 2
+                    </div>
+
+                </article>
+
+
+                <article class="kpi-card">
+
+                    <div class="kpi-head">
+
+                        <span>
+                            ARTIFACT HASHES
+                        </span>
+
+                        <span class="kpi-icon">
+                            ⌗
+                        </span>
+
+                    </div>
+
+
+                    <div
+                        id="hashCount"
+                        class="kpi-value"
+                    >
+                        —
+                    </div>
+
+
+                    <div
+                        id="hashHint"
+                        class="kpi-hint"
+                    >
+                        SHA-256 integrity checks
+                    </div>
+
+                </article>
+
+
+                <article class="kpi-card">
+
+                    <div class="kpi-head">
+
+                        <span>
+                            AUDIT CHAIN
+                        </span>
+
+                        <span class="kpi-icon">
+                            ⛓
+                        </span>
+
+                    </div>
+
+
+                    <div
+                        id="auditState"
+                        class="kpi-value small"
+                    >
+                        —
+                    </div>
+
+
+                    <div
+                        id="auditHint"
+                        class="kpi-hint"
+                    >
+                        Hash-linked event history
+                    </div>
+
+                </article>
+
+            </section>
+
+
+            <!-- BUILDER VERIFICATION -->
+
+            <section class="panel">
+
+                <div class="panel-header">
+
+                    <div>
+
+                        <div class="panel-kicker">
+                            BUILDER VERIFICATION
+                        </div>
+
+
+                        <h2>
+                            Independent builder results
+                        </h2>
+
+
+                        <p>
+
+                            Cryptographic checks performed
+                            against generated artifacts,
+                            SHA-256 hashes and trusted signatures.
+
+                        </p>
+
+                    </div>
+
+
+                    <div
+                        id="lastRun"
+                        class="last-run"
+                    >
+                        NOT RUN
+                    </div>
+
+                </div>
+
+
+                <div
+                    id="builderGrid"
+                    class="builder-grid"
+                >
+
+                    <div class="empty-state">
+                        Waiting for first verification.
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- QUORUM -->
+
+            <section class="panel">
+
+                <div class="panel-header">
+
+                    <div>
+
+                        <div class="panel-kicker">
+                            QUORUM DECISION
+                        </div>
+
+
+                        <h2>
+                            Consensus across verified outputs
+                        </h2>
+
+
+                        <p>
+
+                            A build is trusted only when
+                            the configured 2-of-3 consensus
+                            threshold is achieved.
+
+                        </p>
+
+                    </div>
+
+
+                    <div class="policy-badge">
+                        ✓ 2 OF 3
+                    </div>
+
+                </div>
+
+
+                <div class="decision-layout">
+
+
+                    <div
+                        id="decisionBanner"
+                        class="decision-banner pending"
+                    >
+
+                        <div
+                            id="decisionStatus"
+                            class="decision-status"
+                        >
+                            PENDING
+                        </div>
+
+
+                        <div
+                            id="decisionMessage"
+                            class="decision-message"
+                        >
+                            Waiting for verification.
+                        </div>
+
+                    </div>
+
+
+                    <div class="decision-grid">
+
+
+                        <div class="decision-item">
+
+                            <span>
+                                Winning group
+                            </span>
+
+                            <strong
+                                id="winningGroup"
+                            >
+                                —
+                            </strong>
+
+                        </div>
+
+
+                        <div class="decision-item">
+
+                            <span>
+                                Verified quorum
+                            </span>
+
+                            <strong
+                                id="decisionQuorum"
+                            >
+                                —
+                            </strong>
+
+                        </div>
+
+
+                        <div class="decision-item">
+
+                            <span>
+                                Required
+                            </span>
+
+                            <strong
+                                id="decisionRequired"
+                            >
+                                2
+                            </strong>
+
+                        </div>
+
+
+                        <div class="decision-item">
+
+                            <span>
+                                Outlier builders
+                            </span>
+
+                            <strong
+                                id="decisionOutliers"
+                            >
+                                None
+                            </strong>
+
+                        </div>
+
+
+                        <div class="decision-item wide">
+
+                            <span>
+                                Winning SHA-256
+                            </span>
+
+                            <code
+                                id="winningHash"
+                            >
+                                —
+                            </code>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="decision-actions">
+
+                    <button
+                        id="verifyAgainBtn"
+                        class="primary-btn"
+                        type="button"
+                    >
+                        Verify now ↗
+                    </button>
+
+
+                    <button
+                        id="demoBtn"
+                        class="secondary-btn"
+                        type="button"
+                        onclick="runTwoFailDemo()"
+                    >
+                        ⚠ Simulate 2-builder failure
+                    </button>
+
+                </div>
+
+
+                <div
+                    id="demoNotice"
+                    class="demo-notice hidden"
+                >
+
+                    DEMO MODE · Builder B and Builder C
+                    are simulated as unavailable.
+
+                </div>
+
+            </section>
+
+        </section>
+
+
+        <!-- ================================================== -->
+        <!-- BUILDERS TAB -->
+        <!-- ================================================== -->
+
+        <section
+            id="tab-builders"
+            class="tab-content"
+        >
+
+            <section class="panel">
+
+                <div class="panel-header">
+
+                    <div>
+
+                        <div class="panel-kicker">
+                            BUILDER NETWORK
+                        </div>
+
+
+                        <h2>
+                            Cryptographic builder status
+                        </h2>
+
+
+                        <p>
+                            Each builder contributes only after
+                            artifact and signature verification
+                            succeeds.
+                        </p>
+
+                    </div>
+
+
+                    <button
+                        id="builderRefreshBtn"
+                        class="secondary-btn"
+                        type="button"
+                    >
+                        ↻ Refresh
+                    </button>
+
+                </div>
+
+
+                <div
+                    id="builderNetworkGrid"
+                    class="builder-network-grid"
+                >
+
+                    <div class="empty-state">
+                        No verification data available.
+                    </div>
+
+                </div>
+
+            </section>
+
+        </section>
+
+
+        <!-- ================================================== -->
+        <!-- AUDIT TAB -->
+        <!-- ================================================== -->
+
+        <section
+            id="tab-audit"
+            class="tab-content"
+        >
+
+            <section class="panel">
+
+                <div class="panel-header">
+
+                    <div>
+
+                        <div class="panel-kicker">
+                            AUDIT TRAIL
+                        </div>
+
+
+                        <h2>
+                            Tamper-evident event history
+                        </h2>
+
+
+                        <p>
+                            Every verification decision is
+                            linked using SHA-256 hashes.
+                        </p>
+
+                    </div>
+
+
+                    <button
+                        id="auditRefreshBtn"
+                        class="secondary-btn"
+                        type="button"
+                    >
+                        ↻ Refresh
+                    </button>
+
+                </div>
+
+
+                <div
+                    id="auditStatePanel"
+                    class="audit-state-panel"
+                >
+                    Checking audit chain...
+                </div>
+
+
+                <div
+                    id="auditEntries"
+                    class="audit-list"
+                >
+
+                    <div class="empty-state">
+                        Audit events will appear after
+                        a verification run.
+                    </div>
+
+                </div>
+
+            </section>
+
+        </section>
+
+
+        <!-- FOOTER -->
+
+        <footer class="report-footer">
+
+            <span>
+                QUORUM · Multi-builder software
+                supply-chain verification
+            </span>
+
+
+            <span>
+                Local demo · SHA-256 + Ed25519
+            </span>
+
+
+            <span
+                id="footerApiStatus"
+            >
+                API checking...
+            </span>
+
+        </footer>
+
+    </main>
+
+</div>
+
+</body>
+</html>

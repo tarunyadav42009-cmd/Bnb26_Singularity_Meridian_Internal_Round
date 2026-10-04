@@ -1,0 +1,9 @@
+{
+    "builder_id": "builder-a",
+    "artifact": "six-1.17.0-py2.py3-none-any.whl",
+    "artifact_hash": "4bbb0c9e5e2acb67374a42fd8720bc60010b7e69e28b3c21c3760b5c2aaa6b17",
+    "hash_algorithm": "SHA-256",
+    "signature_algorithm": "Ed25519",
+    "public_key": "Vp7c+2J0Pl4xRyDjRsNFQRxD6iWCgomoUKpyg08vmzM=",
+    "signature": "AN43UaqYsUIBw5fHVUM3LSn939I+XnXbOERK/W4hnQEG4zHhmqkooCoadp+MPiOB9e0xbTKd/lTfZnQFpKxgDg=="
+}
