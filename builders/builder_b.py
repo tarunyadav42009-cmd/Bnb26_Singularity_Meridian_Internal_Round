@@ -1,178 +1,31 @@
-import os
-import hashlib
-import shutil
-import subprocess
-import sys
+"""CLI wrapper for Builder B against the active submitted source."""
+import argparse
 from pathlib import Path
+import sys
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from backend.pipeline.source_pipeline import CURRENT_SOURCE_DIR, run_pipeline
 
 
-# --------------------------------------------------
-# QUORUM BUILDER B
-# Independent build of the same source
-# --------------------------------------------------
-
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-
-SOURCE_DIR = PROJECT_ROOT / "source"
-
-ARTIFACT_DIR = (
-    PROJECT_ROOT
-    / "data"
-    / "artifacts"
-    / "builder-b"
-)
-
-
-def calculate_sha256(file_path):
-
-    sha256 = hashlib.sha256()
-
-    with file_path.open("rb") as file:
-
-        for chunk in iter(
-            lambda: file.read(1024 * 1024),
-            b""
-        ):
-            sha256.update(chunk)
-
-    return sha256.hexdigest()
-
-
-def clean_build_files():
-
-    folders = [
-        SOURCE_DIR / "build",
-        SOURCE_DIR / "dist",
-        SOURCE_DIR / "six.egg-info"
-    ]
-
-    for folder in folders:
-
-        if folder.exists():
-
-            if folder.is_dir():
-                shutil.rmtree(folder)
-
-            else:
-                folder.unlink()
-
-
-def build_package():
-
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--source", default=str(CURRENT_SOURCE_DIR))
+    args = parser.parse_args()
+    result = run_pipeline(Path(args.source))
+    item = next(x for x in result["build_results"] if x["builder_id"] == "builder-b")
     print("=" * 60)
     print("             QUORUM - BUILDER B")
     print("=" * 60)
-
-    # --------------------------------------------------
-    # 1. Check source
-    # --------------------------------------------------
-
-    print()
-    print("[1/4] Checking source code...")
-
-    if not SOURCE_DIR.exists():
-
-        print("ERROR: Source directory not found.")
-        sys.exit(1)
-
-    print(f"Source: {SOURCE_DIR}")
-
-    # --------------------------------------------------
-    # 2. Build package
-    # --------------------------------------------------
-
-    print()
-    print("[2/4] Building Python package...")
-    
-
-    clean_build_files()
-    os.environ["SOURCE_DATE_EPOCH"] = "1704067200"
-
-
-    result = subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "build",
-            "--wheel",
-            "--outdir",
-            str(SOURCE_DIR / "dist")
-        ],
-        cwd=SOURCE_DIR,
-        capture_output=True,
-        text=True
-    )
-
-    if result.returncode != 0:
-
-        print()
-        print("BUILD FAILED")
-        print()
-
-        print(result.stdout)
-        print(result.stderr)
-
-        sys.exit(1)
-
-    print("Build completed successfully.")
-
-    # --------------------------------------------------
-    # 3. Copy artifact
-    # --------------------------------------------------
-
-    print()
-    print("[3/4] Copying Builder B artifact...")
-
-    wheels = list(
-        (SOURCE_DIR / "dist").glob("*.whl")
-    )
-
-    if not wheels:
-
-        print("ERROR: No wheel artifact found.")
-        sys.exit(1)
-
-    artifact = wheels[0]
-
-    ARTIFACT_DIR.mkdir(
-        parents=True,
-        exist_ok=True
-    )
-
-    destination = ARTIFACT_DIR / artifact.name
-
-    shutil.copy2(
-        artifact,
-        destination
-    )
-
-    print(
-        f"Artifact: {destination}"
-    )
-
-    # --------------------------------------------------
-    # 4. Calculate hash
-    # --------------------------------------------------
-
-    print()
-    print("[4/4] Calculating SHA-256...")
-
-    artifact_hash = calculate_sha256(
-        destination
-    )
-
-    print()
-    print("=" * 60)
-    print("              BUILD RESULT")
-    print("=" * 60)
-
-    print("Builder       : builder-b")
-    print(f"Artifact      : {destination.name}")
-    print(f"SHA-256       : {artifact_hash}")
-    print("Build Status  : SUCCESS")
-
+    print("Source:", args.source)
+    print("Build mode:", item.get("build_mode"))
+    print("Artifact:", item.get("artifact"))
+    print("SHA-256:", item.get("artifact_hash"))
+    print("Status:", "SUCCESS" if item.get("success") else "FAILED")
     print("=" * 60)
 
 
 if __name__ == "__main__":
-    build_package()
+    main()

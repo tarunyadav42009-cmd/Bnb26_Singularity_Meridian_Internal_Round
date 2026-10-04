@@ -1,428 +1,164 @@
+"""Verify the current submitted-source build run."""
+
+from __future__ import annotations
+
 import base64
 import hashlib
 import json
 from pathlib import Path
 
-from cryptography.hazmat.primitives.asymmetric.ed25519 import (
-    Ed25519PublicKey
-)
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 
-# ============================================================
-# PATHS
-# ============================================================
-
-CURRENT_DIR = Path(__file__).resolve().parent
-
-BACKEND_DIR = CURRENT_DIR.parent
-
-PROJECT_ROOT = BACKEND_DIR.parent
-
-ARTIFACT_ROOT = (
-    PROJECT_ROOT
-    / "data"
-    / "artifacts"
-)
-
-ATTESTATION_DIR = (
-    PROJECT_ROOT
-    / "data"
-    / "attestations"
-)
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+CURRENT_RUN_DIR = PROJECT_ROOT / "data" / "runs" / "current"
+BUILDERS = ("builder-a", "builder-b", "builder-c")
 
 
-# ============================================================
-# BUILDER ARTIFACTS
-# ============================================================
-
-BUILDER_ARTIFACTS = {
-
-    "builder-a":
-        ARTIFACT_ROOT
-        / "six-1.17.0-py2.py3-none-any.whl",
-
-    "builder-b":
-        ARTIFACT_ROOT
-        / "builder-b"
-        / "six-1.17.0-py2.py3-none-any.whl",
-
-    "builder-c":
-        ARTIFACT_ROOT
-        / "builder-c"
-        / "six-1.17.0-py2.py3-none-any.whl"
-}
-
-
-BUILDERS = [
-    "builder-a",
-    "builder-b",
-    "builder-c"
-]
-
-
-# ============================================================
-# SHA-256
-# ============================================================
-
-def calculate_sha256(file_path):
-
-    sha256 = hashlib.sha256()
-
+def calculate_sha256(file_path: Path) -> str:
+    digest = hashlib.sha256()
     with file_path.open("rb") as file:
-
-        for chunk in iter(
-            lambda: file.read(1024 * 1024),
-            b""
-        ):
-
-            sha256.update(chunk)
-
-    return sha256.hexdigest()
+        for chunk in iter(lambda: file.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
-# ============================================================
-# SIGNATURE VERIFICATION
-# ============================================================
-
-def verify_signature(
-    public_key_b64,
-    signature_b64,
-    signed_data
-):
-
+def verify_signature(public_key_b64: str, signature_b64: str, signed_data: bytes) -> bool:
     try:
-
-        public_key_bytes = (
-            base64.b64decode(
-                public_key_b64
-            )
-        )
-
-        signature = (
-            base64.b64decode(
-                signature_b64
-            )
-        )
-
-        public_key = (
-            Ed25519PublicKey
-            .from_public_bytes(
-                public_key_bytes
-            )
-        )
-
-        public_key.verify(
-            signature,
-            signed_data
-        )
-
+        public_key = Ed25519PublicKey.from_public_bytes(base64.b64decode(public_key_b64))
+        public_key.verify(base64.b64decode(signature_b64), signed_data)
         return True
-
     except Exception:
-
         return False
 
 
-# ============================================================
-# SINGLE BUILDER
-# ============================================================
-
-def verify_builder(builder_id):
-
+def verify_builder(builder_id: str, run: dict) -> dict:
     result = {
-
-        "builder_id":
-            builder_id,
-
-        "artifact":
-            None,
-
-        "artifact_hash":
-            None,
-
-        "hash_valid":
-            False,
-
-        "signature_valid":
-            False,
-
-        "verified":
-            False,
-
-        "error":
-            None
+        "builder_id": builder_id,
+        "artifact": None,
+        "artifact_hash": None,
+        "actual_hash": None,
+        "hash_valid": False,
+        "signature_valid": False,
+        "source_hash": run.get("source_hash"),
+        "source_hash_valid": False,
+        "attestation_valid": False,
+        "build_mode": None,
+        "verified": False,
+        "error": None,
     }
 
-
-    # --------------------------------------------------------
-    # ATTESTATION
-    # --------------------------------------------------------
-
-    attestation_file = (
-        ATTESTATION_DIR
-        / f"{builder_id}.json"
+    build_result = next(
+        (item for item in run.get("build_results", []) if item.get("builder_id") == builder_id),
+        None,
     )
-
-    if not attestation_file.exists():
-
-        result["error"] = (
-            "Attestation file not found."
-        )
-
+    if not build_result:
+        result["error"] = "Builder result not found in current run."
         return result
 
-
-    try:
-
-        with attestation_file.open(
-            "r",
-            encoding="utf-8"
-        ) as file:
-
-            attestation = json.load(file)
-
-    except Exception as error:
-
-        result["error"] = (
-            f"Invalid attestation JSON: {error}"
-        )
-
+    result["build_mode"] = build_result.get("build_mode")
+    if not build_result.get("success"):
+        result["error"] = build_result.get("error", "Builder failed.")
         return result
 
-
-    # --------------------------------------------------------
-    # IDENTITY
-    # --------------------------------------------------------
-
-    if (
-        attestation.get("builder_id")
-        != builder_id
-    ):
-
-        result["error"] = (
-            "Builder identity mismatch."
-        )
-
-        return result
-
-
-    artifact_name = (
-        attestation.get("artifact")
-    )
-
-    expected_hash = (
-        attestation.get("artifact_hash")
-    )
-
-    public_key = (
-        attestation.get("public_key")
-    )
-
-    signature = (
-        attestation.get("signature")
-    )
-
-
-    if not all([
-        artifact_name,
-        expected_hash,
-        public_key,
-        signature
-    ]):
-
-        result["error"] = (
-            "Incomplete attestation."
-        )
-
-        return result
-
+    artifact_name = build_result.get("artifact")
+    artifact_path = Path(build_result.get("artifact_path", ""))
+    attestation_path = Path(build_result.get("attestation_path", ""))
 
     result["artifact"] = artifact_name
 
-    result["artifact_hash"] = (
-        expected_hash
-    )
-
-
-    # --------------------------------------------------------
-    # ARTIFACT
-    # --------------------------------------------------------
-
-    artifact_path = (
-        BUILDER_ARTIFACTS
-        .get(builder_id)
-    )
-
-    if artifact_path is None:
-
-        result["error"] = (
-            "Unknown builder."
-        )
-
-        return result
-
-
     if not artifact_path.exists():
-
-        result["error"] = (
-            "Artifact not found."
-        )
-
+        result["error"] = "Builder artifact is missing."
         return result
 
-
-    # --------------------------------------------------------
-    # ARTIFACT NAME CHECK
-    # --------------------------------------------------------
-
-    if artifact_name != artifact_path.name:
-
-        result["error"] = (
-            "Attestation artifact name mismatch."
-        )
-
+    if not attestation_path.exists():
+        result["error"] = "Builder attestation is missing."
         return result
 
+    try:
+        attestation = json.loads(attestation_path.read_text(encoding="utf-8"))
+    except Exception as error:
+        result["error"] = f"Invalid attestation JSON: {error}"
+        return result
 
-    # --------------------------------------------------------
-    # HASH
-    # --------------------------------------------------------
+    if attestation.get("builder_id") != builder_id:
+        result["error"] = "Builder identity mismatch."
+        return result
 
-    actual_hash = calculate_sha256(
-        artifact_path
-    )
+    if attestation.get("artifact") != artifact_name:
+        result["error"] = "Attestation artifact mismatch."
+        return result
 
-    result["hash_valid"] = (
-        actual_hash
-        == expected_hash
-    )
+    if attestation.get("source_hash") != run.get("source_hash"):
+        result["error"] = "Attestation belongs to a different source snapshot."
+        return result
 
+    result["source_hash_valid"] = True
+    expected_hash = attestation.get("artifact_hash")
+    result["artifact_hash"] = expected_hash
 
-    # --------------------------------------------------------
-    # SIGNED DATA
-    # --------------------------------------------------------
+    actual_hash = calculate_sha256(artifact_path)
+    result["actual_hash"] = actual_hash
+    result["hash_valid"] = actual_hash == expected_hash
 
-    signed_data = {
-
-        "builder_id":
-            builder_id,
-
-        "artifact":
-            artifact_name,
-
-        "artifact_hash":
-            expected_hash,
-
-        "hash_algorithm":
-            attestation.get(
-                "hash_algorithm"
-            ),
-
-        "signature_algorithm":
-            attestation.get(
-                "signature_algorithm"
-            )
+    signed = {
+        "builder_id": builder_id,
+        "artifact": artifact_name,
+        "artifact_hash": expected_hash,
+        "source_hash": attestation.get("source_hash"),
+        "hash_algorithm": attestation.get("hash_algorithm"),
+        "signature_algorithm": attestation.get("signature_algorithm"),
+        "build_mode": attestation.get("build_mode"),
+        "run_id": attestation.get("run_id"),
     }
-
-
-    canonical_data = json.dumps(
-        signed_data,
-        sort_keys=True,
-        separators=(",", ":")
-    ).encode("utf-8")
-
-
-    # --------------------------------------------------------
-    # SIGNATURE
-    # --------------------------------------------------------
-
-    result["signature_valid"] = (
-        verify_signature(
-            public_key,
-            signature,
-            canonical_data
-        )
+    canonical = json.dumps(signed, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    result["signature_valid"] = verify_signature(
+        attestation.get("public_key", ""),
+        attestation.get("signature", ""),
+        canonical,
     )
-
-
-    # --------------------------------------------------------
-    # FINAL BUILDER STATUS
-    # --------------------------------------------------------
-
-    result["verified"] = (
-        result["hash_valid"]
-        and
-        result["signature_valid"]
+    result["attestation_valid"] = (
+        result["source_hash_valid"]
+        and result["signature_valid"]
+        and result["hash_valid"]
     )
-
-
+    result["verified"] = result["attestation_valid"]
+    if not result["verified"]:
+        result["error"] = "Cryptographic verification failed."
     return result
 
 
-# ============================================================
-# ALL BUILDERS
-# ============================================================
+def verify_all_builders() -> list[dict]:
+    run_file = CURRENT_RUN_DIR / "run.json"
+    if not run_file.exists():
+        return [
+            {
+                "builder_id": builder,
+                "artifact": None,
+                "artifact_hash": None,
+                "hash_valid": False,
+                "signature_valid": False,
+                "source_hash_valid": False,
+                "attestation_valid": False,
+                "verified": False,
+                "error": "No source build has been executed yet.",
+            }
+            for builder in BUILDERS
+        ]
 
-def verify_all_builders():
-
-    results = []
-
-    for builder_id in BUILDERS:
-
-        result = verify_builder(
-            builder_id
-        )
-
-        results.append(
-            result
-        )
-
-    return results
+    run = json.loads(run_file.read_text(encoding="utf-8"))
+    return [verify_builder(builder, run) for builder in BUILDERS]
 
 
-# ============================================================
-# CLI TEST
-# ============================================================
+def current_run() -> dict | None:
+    run_file = CURRENT_RUN_DIR / "run.json"
+    if not run_file.exists():
+        return None
+    try:
+        return json.loads(run_file.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+
 
 if __name__ == "__main__":
-
-    print("=" * 60)
-    print("       QUORUM - VERIFICATION ENGINE")
-    print("=" * 60)
-
-    results = verify_all_builders()
-
-    for result in results:
-
-        print()
-        print(
-            result["builder_id"].upper()
-        )
-
-        print(
-            "Hash      :",
-            "VALID"
-            if result["hash_valid"]
-            else "INVALID"
-        )
-
-        print(
-            "Signature :",
-            "VALID"
-            if result["signature_valid"]
-            else "INVALID"
-        )
-
-        print(
-            "Status    :",
-            "VERIFIED"
-            if result["verified"]
-            else "FAILED"
-        )
-
-        if result["error"]:
-
-            print(
-                "Error     :",
-                result["error"]
-            )
+    print(json.dumps({"builders": verify_all_builders()}, indent=2))

@@ -1,0 +1,13 @@
+{
+  "artifact": "source-bundle.zip",
+  "artifact_hash": "a3cf3e3151d140e3483e8237a29082901098baada323c2bf4fb9db7b114a17db",
+  "build_mode": "source-bundle",
+  "builder_id": "builder-a",
+  "created_at": "2026-10-04T06:23:13.629778+00:00",
+  "hash_algorithm": "SHA-256",
+  "public_key": "Vp7c+2J0Pl4xRyDjRsNFQRxD6iWCgomoUKpyg08vmzM=",
+  "run_id": "30baf213691a",
+  "signature": "ZOpTNa1cmszqMQw9eghuKvIlSHuvxmGDaKvobOTn1FOoZX4/OwsyRi8dtyCHTcnz09980xbMYDTGnpd7tF4jBg==",
+  "signature_algorithm": "Ed25519",
+  "source_hash": "8070baa94131007d6704ecb0c0a61bbd527dc7a520ac02999ea2d3d511776db8"
+}

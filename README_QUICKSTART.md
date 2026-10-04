@@ -1,34 +1,59 @@
-# QUORUM — Multi-Builder Verifier
+# QUORUM — Source-to-Quorum Build Integrity
 
-QUORUM compares signed artifact attestations from three builders and makes a configurable quorum decision. It includes a Flask API, a responsive dark dashboard, Ed25519 signature checks, SHA-256 artifact hashing, and a hash-chained local audit log.
+QUORUM verifies a **submitted source snapshot** instead of relying on a fixed demo artifact.
 
-## Quick start (Windows)
+## Flow
 
-From the extracted project folder, open PowerShell and run:
-
-```powershell
-py -m venv .venv
-.\.venv\Scripts\Activate.ps1
-py -m pip install -r requirements.txt
-py -m backend.app
+```text
+Source ZIP / GitHub URL
+        ↓
+Source snapshot + SHA-256
+        ↓
+Builder A ─┐
+Builder B ─┼─ independent build workspaces
+Builder C ─┘
+        ↓
+Artifact SHA-256 + Ed25519 attestation
+        ↓
+2-of-3 quorum
+        ↓
+ACCEPT / REJECT
+        ↓
+Hash-linked audit trail
 ```
 
-Open **http://127.0.0.1:5000/** and click **Run verification**. Keep the terminal open while using the dashboard.
+## Start
 
-For the complete step-by-step setup, troubleshooting, API endpoints, and demo walkthrough, read [SETUP_GUIDE.md](SETUP_GUIDE.md).
+From `C:\Quorum`:
 
-## API
+```powershell
+START_QUORUM.bat
+```
 
-- `GET /api/health`
-- `GET /api/builders`
-- `POST /api/verify` with JSON such as `{"required_quorum": 2}`
-- `GET /api/audit/status`
-- `GET /api/audit/entries`
+Or:
 
-## Verification policy
+```powershell
+python backend\app.py
+```
 
-A builder passes only when the artifact SHA-256 matches its attestation and its Ed25519 signature validates against the builder's trusted public key in `keys/`. The system accepts when at least the configured number of verified builders agree on the same artifact hash.
+Open:
 
-## Safety
+`http://127.0.0.1:5000/`
 
-This is a local demo. Do not expose the Flask development server publicly or use real private signing keys in a hackathon archive. The audit chain detects modifications to logged entries but is not an immutable external ledger.
+## Source input
+
+Use **Upload source package** to submit a ZIP of a project, or enter a public GitHub repository URL.
+
+The dashboard will show the source snapshot hash and file count. Verification is disabled until a source snapshot is loaded.
+
+## Build modes
+
+If the submitted source contains `pyproject.toml`, `setup.py`, or `setup.cfg`, each builder attempts a deterministic Python wheel build.
+
+If it is not a Python package, QUORUM creates a deterministic source bundle artifact from the same source snapshot. This keeps the verification pipeline usable for general project source while making the artifact type explicit.
+
+## Demos
+
+After a real source is loaded, `Simulate 2-builder failure` runs the source pipeline and then simulates Builder B and C as unavailable without modifying the source or trusted keys.
+
+`backend\demo\tamper_demo.py` mutates the current Builder-C artifact temporarily to demonstrate hash/signature protection and restores it afterward.

@@ -1,0 +1,55 @@
+{
+  "application": "QUORUM",
+  "attestations_dir": "C:\\Quorum\\data\\runs\\current\\attestations",
+  "build_results": [
+    {
+      "artifact": "source-bundle.zip",
+      "artifact_hash": "a3cf3e3151d140e3483e8237a29082901098baada323c2bf4fb9db7b114a17db",
+      "artifact_path": "C:\\Quorum\\data\\runs\\current\\builders\\builder-a\\artifact\\source-bundle.zip",
+      "attestation_path": "C:\\Quorum\\data\\runs\\current\\attestations\\builder-a.json",
+      "build_mode": "source-bundle",
+      "builder_id": "builder-a",
+      "command": null,
+      "source_hash": "8070baa94131007d6704ecb0c0a61bbd527dc7a520ac02999ea2d3d511776db8",
+      "stderr": "",
+      "stdout": "",
+      "success": true
+    },
+    {
+      "artifact": "source-bundle.zip",
+      "artifact_hash": "a3cf3e3151d140e3483e8237a29082901098baada323c2bf4fb9db7b114a17db",
+      "artifact_path": "C:\\Quorum\\data\\runs\\current\\builders\\builder-b\\artifact\\source-bundle.zip",
+      "attestation_path": "C:\\Quorum\\data\\runs\\current\\attestations\\builder-b.json",
+      "build_mode": "source-bundle",
+      "builder_id": "builder-b",
+      "command": null,
+      "source_hash": "8070baa94131007d6704ecb0c0a61bbd527dc7a520ac02999ea2d3d511776db8",
+      "stderr": "",
+      "stdout": "",
+      "success": true
+    },
+    {
+      "artifact": "source-bundle.zip",
+      "artifact_hash": "a3cf3e3151d140e3483e8237a29082901098baada323c2bf4fb9db7b114a17db",
+      "artifact_path": "C:\\Quorum\\data\\runs\\current\\builders\\builder-c\\artifact\\source-bundle.zip",
+      "attestation_path": "C:\\Quorum\\data\\runs\\current\\attestations\\builder-c.json",
+      "build_mode": "source-bundle",
+      "builder_id": "builder-c",
+      "command": null,
+      "source_hash": "8070baa94131007d6704ecb0c0a61bbd527dc7a520ac02999ea2d3d511776db8",
+      "stderr": "",
+      "stdout": "",
+      "success": true
+    }
+  ],
+  "builders": [
+    "builder-a",
+    "builder-b",
+    "builder-c"
+  ],
+  "created_at": "2026-10-04T06:23:13.609720+00:00",
+  "required_quorum": 2,
+  "run_id": "30baf213691a",
+  "source_file_count": 4,
+  "source_hash": "8070baa94131007d6704ecb0c0a61bbd527dc7a520ac02999ea2d3d511776db8"
+}
